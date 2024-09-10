@@ -2,7 +2,8 @@
 @include('admin.sidebar')
 @include('admin.navbar')
 <style>
-    .daily-purchese-table-box th, .daily-purchese-table-box td{
+    .daily-purchese-table-box th,
+    .daily-purchese-table-box td {
         font-size: 12px !important;
     }
 </style>
@@ -20,13 +21,12 @@
         <div class="row">
             <div class="col-lg-12 grid-margin stretch-card">
                 <div class="card">
-                    {{-- @if ( $user_data->role_id==4) --}}
+                    {{-- @if ($user_data->role_id == 4) --}}
                     @if (0)
-
                     @else
-                    <div class="text-end mt-3 mr-4">
-                        {{-- <button id="GetRowValue" class="btn btn-outline-primary btn-sm">To Vat</button> --}}
-                     </div>
+                        <div class="text-end mt-3 mr-4">
+                            {{-- <button id="GetRowValue" class="btn btn-outline-primary btn-sm">To Vat</button> --}}
+                        </div>
                     @endif
                     <div class="card-body">
                         <h4 class="card-title text-center">Daily Purchase</h4>
@@ -45,11 +45,10 @@
                                         <th class="text-nowrap">Vat</th>
                                         <th class="text-nowrap">Payable</th>
                                         <th class="text-nowrap">Paid</th>
-                                        {{-- @if ($user_data->role_id==4) --}}
+                                        {{-- @if ($user_data->role_id == 4) --}}
                                         @if (1)
-
                                         @else
-                                        <th>Is Vat</th>
+                                            <th>Is Vat</th>
                                         @endif
                                         <th>Due</th>
                                     </tr>
@@ -57,57 +56,66 @@
                                 <tbody>
                                     @php $i=1; @endphp
                                     @foreach ($PurchaseInfo as $user)
-                                    <tr>
-                                        <td value="{{$user->purchase_id}}" class="also checkboxonly-{{$i}}"></td>
-                                        <td style="width: 10px;">{{ $i++ }}</td>
-                                        <td style="width: 60px;">{{ $user->purchase_id }}</td>
-                                        <td style="width: 250px;">
+                                        <tr>
+                                            <td value="{{ $user->purchase_id }}"
+                                                class="also checkboxonly-{{ $i }}"></td>
+                                            <td style="width: 10px;">{{ $i++ }}</td>
+                                            <td style="width: 60px;">{{ $user->purchase_id }}</td>
+                                            <td style="width: 250px;">
+                                                @php
+                                                    $cart_item_data = \App\Models\PurchaseDetail::join(
+                                                        'products',
+                                                        'products.product_id',
+                                                        '=',
+                                                        'purchase_details.product_id',
+                                                    )
+                                                        ->where('purchase_details.purchase_id', $user->purchase_id)
+                                                        ->select('purchase_details.quantity', 'products.product_name')
+                                                        ->get();
+                                                @endphp
+                                                @foreach ($cart_item_data as $itemdata)
+                                                    <div class="row pr-3 pt-2">
+                                                        <div class="col-12">
+                                                            {{ $itemdata->product_name }}
+                                                        </div>
+                                                        <div class="col-12 mt-2">
+                                                            {{ $itemdata->quantity }}
+                                                        </div>
+                                                        <div class="col-12 mt-2 text-right">
+                                                            {{ $itemdata->purchase_price }}
+                                                        </div>
+                                                    </div>
+                                                @endforeach
+
+                                            </td>
+                                            <td style="width: 60px;">{{ $user->pur_date }}</td>
+                                            <td style="width: 60px;" class="text-right">{{ $user->total_item_price }}
+                                            </td>
+                                            <td style="width: 60px;" class="text-right">{{ $user->discount }}</td>
+                                            <td style="width: 60px;" class="text-right">{{ $user->total_vat }}</td>
+                                            <td style="width: 60px;" class="text-right">{{ $user->total_payable }}</td>
                                             @php
-                                            $cart_item_data = \App\Models\PurchaseDetail::join('products', 'products.product_id', '=', 'purchase_details.product_id')
-                                            ->where('purchase_details.purchase_id', $user->purchase_id)
-                                            ->select('purchase_details.quantity', 'products.product_name')
-                                            ->get();
+                                                $pay = \App\Models\SupplierPayment::where(
+                                                    'purchase_id',
+                                                    $user->purchase_id,
+                                                )->first();
                                             @endphp
-                                            @foreach ($cart_item_data as $itemdata)
-                                            <div class="row pr-3 pt-2">
-                                                <div class="col-12">
-                                                    {{ $itemdata->product_name }}
-                                                </div>
-                                                <div class="col-12 mt-2">
-                                                    {{ $itemdata->quantity }}
-                                                </div>
-                                                <div class="col-12 mt-2 text-right">
-                                                    {{ $itemdata->purchase_price }}
-                                                </div>
-                                            </div>
-                                            @endforeach
 
-                                        </td>
-                                        <td style="width: 60px;">{{ $user->pur_date }}</td>
-                                        <td style="width: 60px;" class="text-right">{{ $user->total_item_price	 }}</td>
-                                        <td style="width: 60px;" class="text-right">{{ $user->discount }}</td>
-                                        <td style="width: 60px;" class="text-right">{{ $user->total_vat }}</td>
-                                        <td style="width: 60px;" class="text-right">{{ $user->total_payable }}</td>
-                                        @php
-                                        $pay = \App\Models\SupplierPayment::where('purchase_id', $user->purchase_id)
-                                        ->first();
-                                        @endphp
-                                        <td style="width: 60px;" class="text-right">{{ $pay->paid_amount }}</td>
+                                            @if ($pay)
+                                                <td style="width: 60px;" class="text-right">{{ $pay->paid_amount }}
+                                                </td>
+                                            @else
+                                                <td style="width: 60px;" class="text-right">No Payment</td>
+                                            @endif
 
-                                        {{-- @if ($user_data->role_id==4) --}}
-                                        @if (1)
+                                            @if ($pay)
+                                                <td style="width: 60px;" class="text-right">{{ $pay->revised_due }}
+                                                </td>
+                                            @else
+                                                <td style="width: 60px;" class="text-right">No Payment</td>
+                                            @endif
 
-                                        @else
-                                        <td>@if ( $user->is_vat_show == 0)
-                                            No
-                                        @else
-                                            Yes
-                                        @endif</td>
-                                        @endif
-
-                                        </td>
-                                        <td style="width: 60px;" class="text-right">{{ $pay->revised_due }}</td>
-                                    </tr>
+                                        </tr>
                                     @endforeach
                                 </tbody>
                                 <thead>
@@ -135,15 +143,17 @@
     </div>
     <!-- page-body-wrapper ends -->
 </div>
-<script src="https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.slim.min.js" integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj" crossorigin="anonymous">
+<script src="https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.slim.min.js"
+    integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj" crossorigin="anonymous">
 </script>
 <script>
-    $(document).ready(function () {
+    $(document).ready(function() {
         $(document).on('click', '#GetRowValue', function() {
             var selectedRowIds = [];
 
             $('#cheack tbody input[type="checkbox"]:checked').each(function() {
-                var rowId = $(this).closest('tr').find('td:nth-child(1)').attr('value'); // Assuming the ID is in the third column (index 2)
+                var rowId = $(this).closest('tr').find('td:nth-child(1)').attr(
+                'value'); // Assuming the ID is in the third column (index 2)
                 selectedRowIds.push(rowId);
             });
 
@@ -152,7 +162,8 @@
                 var currentPage = $('#cheack').DataTable().page();
                 $('#cheack').DataTable().page.len(-1).draw(); // Show all rows on a single page
                 $('#cheack tbody input[type="checkbox"]:checked').each(function() {
-                    var rowId = $(this).closest('tr').find('td:nth-child(1)').attr('value'); // Assuming the ID is in the third column (index 2)
+                    var rowId = $(this).closest('tr').find('td:nth-child(1)').attr(
+                    'value'); // Assuming the ID is in the third column (index 2)
                     if (!selectedRowIds.includes(rowId)) {
                         selectedRowIds.push(rowId);
                     }
@@ -166,11 +177,11 @@
             $.ajax({
                 url: "all-purchase-report-for-vat",
                 method: "GET",
-                data:{
-                    'selectedRowIds':selectedRowIds,
+                data: {
+                    'selectedRowIds': selectedRowIds,
                 },
                 dataType: "json",
-                success: function (response) {
+                success: function(response) {
                     // $('#tableVaue').empty();
                     swal("Success!", "SuccessFully Add For Vat Show", response.success)
                     // console.log(response.status);
